@@ -9,3 +9,7 @@ COPY ./codeql /opt/codeql
 
 # Add /opt/codeql/codeql to the PATH environment variable
 RUN ln -s /opt/codeql/codeql /usr/local/bin/codeql
+
+
+RUN apt-get update && \
+    apt-get install -y curl wget unzip python3 python3-pip cpanminus subversion perl git

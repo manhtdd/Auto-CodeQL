@@ -48,6 +48,11 @@ Before getting started, make sure you have Python 3.12+ and `pip` installed. You
    ```
 
 ## Installation
+Clone this repository:
+```
+git clone https://github.com/manhtdd/Auto-CodeQL.git auto_codeql
+cd auto_codeql
+```
 
 To install the `auto_codeql` package, run the following command:
 

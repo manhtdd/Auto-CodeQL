@@ -3,7 +3,7 @@ import logging
 import os
 import json
 import subprocess
-from read_output import codeql_analysis
+from .read_output import codeql_analysis
 
 CREATE_DATABASE_CMD = {
     "python": "codeql database create codeql-database --language=python --source-root={} --overwrite",

@@ -1,5 +1,10 @@
-*codeql*
+codeql
 input
 logs
 output
 __pycache__
+build
+dist
+codeql.md
+codeql-database
+auto_codeql.egg-info

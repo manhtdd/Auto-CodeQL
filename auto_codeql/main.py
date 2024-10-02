@@ -4,6 +4,7 @@ import os
 import json
 import subprocess
 from .read_output import codeql_analysis
+import time
 
 CREATE_DATABASE_CMD = {
     "python": "codeql database create codeql-database --language=python --source-root={} --overwrite",
@@ -26,19 +27,29 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-
-def execute_command(cmd:str, cwd:str="."):
-    logging.info(f"Run:\n\t{cmd}\nAt: {cwd}")
-    try:
-        # Check if the specified directory exists
-        if not os.path.isdir(cwd):
-            raise NotADirectoryError(f"{cwd} is not a valid directory")
-
-        # Execute the command in the specified directory
-        subprocess.run(cmd, cwd=cwd, shell=True, check=True)
         
-    except Exception as e:
-        logging.error(f"An error occurred: {str(e)}")
+def command_with_timeout(cmd:str, cwd:str=".", timeout=60):
+    """
+    Execute a command with a specified timeout.
+    :param cmd: Command to be executed.
+    :param timeout: Time (in seconds) after which the command will be terminated.
+    :return: Standard output and standard error of the executed command.
+    """
+    logging.info(f"Run:\n\t{cmd}\nAt: {cwd}")
+    p = subprocess.Popen(cmd, cwd=cwd, shell=True, universal_newlines=True)
+    start_time = time.time()
+
+    while True:
+        if p.poll() is not None:
+            break
+        elapsed_time = time.time() - start_time
+        if timeout and elapsed_time > timeout:
+            p.terminate()
+            return 'TIMEOUT', 'TIMEOUT'
+        time.sleep(1)
+
+    out, err = p.communicate()
+    return out, err
 
 def run_codeql(codepath: str, savepath: Optional[str] = None) -> dict:
     logging.info(codepath)
@@ -65,8 +76,8 @@ def run_codeql(codepath: str, savepath: Optional[str] = None) -> dict:
         logging.error("The file has a different extension")
         return {}
     
-    execute_command(create_database_cmd)
-    execute_command(analyze_cmd)
+    command_with_timeout(create_database_cmd)
+    command_with_timeout(analyze_cmd)
     
     if not os.path.exists(savepath):
         logging.error(f"The file '{savepath}' does not exist.")

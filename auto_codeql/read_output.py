@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import pandas as pd
 
 # Setup logging to both file and console
 LOGS_DIR = "logs"
@@ -52,38 +53,18 @@ def codeql2cwe(cwe):
     else:
         return [], ['10000']
     
-def codeql_analysis(file_path):
-    file_content = load_json(file_path)
-    # if 'runs' in file_content.keys():
-    #     vulss = file_content['runs']
-    #     for vuls in vulss:
-    #         if 'results' in vuls.keys():
-    #             vuls_in = vuls['results']
-    #             if vuls_in != None:
-    #                 for vul in vuls_in:
-    #                     rule_id = vul['ruleId']
-    #                     loca = vul['locations'][0]
-    #                     file = loca['physicalLocation']['artifactLocation']['uri']
-    #                     line = loca['physicalLocation']['region']['startLine']
-    #                     cwe, _ = codeql2cwe(rule_id)
+def codeql_analysis(tmp_path, save_path):
+    ### Load csv with pre-defined columns in CodeQL
+    data = pd.read_csv(tmp_path, names=['Name', 'Description', 'Severity', 'Message', 'Path', 'Start line', 'Start column', 'End line', 'End column'])
+    data = data.dropna()
+    data = data.reset_index(drop=True)
+    
+    ### Overwrite file_path with columns
+    data.to_csv(save_path, index=False)
 
-    #                     predict = {
-    #                         'file': file,
-    #                         'line': line,
-    #                         'rule_id': rule_id,
-    #                         'cwe': cwe,
-    #                         'found_by': 'code_ql'
-    #                     }
-                        
-    #                     return predict
-    #         else:
-    #             logging.error(f"'result' is empty, file: {file_path}")
-    #     else:
-    #         logging.error(f"No key 'result' in {file_path}")
-    # else:
-    #     logging.error(f"No key 'runs' in {file_path}")
-        
-    return file_content
+    if os.path.exists(tmp_path):
+        os.remove(tmp_path)
+    return data
 
 if __name__ == "__main__":
     file_path = "/home/manhtd/Projects/auto_codeql/input/test.sarif"

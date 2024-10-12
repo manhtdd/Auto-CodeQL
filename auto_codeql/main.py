@@ -11,7 +11,7 @@ CREATE_DATABASE_CMD = {
     "java": "codeql database create codeql-database --command \"javac {}\" --language=java --source-root={} --overwrite"
 }
 
-ANALYZE_CMD = "codeql database analyze codeql-database --format=sarif-latest --output={} --sarif-category={}"
+ANALYZE_CMD = "codeql database analyze codeql-database --format=csv --output={} --sarif-category={}"
 
 # Setup logging to both file and console
 LOGS_DIR = "logs"
@@ -51,9 +51,11 @@ def command_with_timeout(cmd:str, cwd:str=".", timeout=60):
     out, err = p.communicate()
     return out, err
 
-def run_codeql(codepath: str, savepath: Optional[str] = None) -> dict:
+def run_codeql(codepath: str, savepath: str) -> dict:
     logging.info(codepath)
     logging.info(savepath)
+    tmppath = savepath + ".tmp"
+    logging.info(tmppath)
     
     dir_path = os.path.dirname(codepath)
     logging.info(dir_path)
@@ -64,13 +66,13 @@ def run_codeql(codepath: str, savepath: Optional[str] = None) -> dict:
         logging.info("The file has a .py extension")
         create_database_cmd = CREATE_DATABASE_CMD["python"].format(dir_path)
         logging.info(create_database_cmd)
-        analyze_cmd = ANALYZE_CMD.format(savepath, "python")
+        analyze_cmd = ANALYZE_CMD.format(tmppath, "python")
         logging.info(analyze_cmd)
     elif codepath.endswith(".java"):
         logging.info("The file has a .java extension")
         create_database_cmd = CREATE_DATABASE_CMD["java"].format(file_name, dir_path)
         logging.info(create_database_cmd)
-        analyze_cmd = ANALYZE_CMD.format(savepath, "java")
+        analyze_cmd = ANALYZE_CMD.format(tmppath, "java")
         logging.info(analyze_cmd)
     else:
         logging.error("The file has a different extension")
@@ -79,11 +81,11 @@ def run_codeql(codepath: str, savepath: Optional[str] = None) -> dict:
     command_with_timeout(create_database_cmd)
     command_with_timeout(analyze_cmd)
     
-    if not os.path.exists(savepath):
-        logging.error(f"The file '{savepath}' does not exist.")
+    if not os.path.exists(tmppath):
+        logging.error(f"The file '{tmppath}' does not exist. CodeQL analysis failed !!!")
         return {}
     
-    return codeql_analysis(savepath)
+    return codeql_analysis(tmppath, savepath)
 
 if __name__ == "__main__":
     codepath = "input/test.py"

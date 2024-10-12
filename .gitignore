@@ -8,3 +8,5 @@ dist
 codeql.md
 codeql-database
 auto_codeql.egg-info
+test.py
+tmp/

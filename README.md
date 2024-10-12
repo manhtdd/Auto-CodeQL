@@ -79,18 +79,25 @@ from auto_codeql import run_codeql
 import json
 
 codepath = "input/test.py"  # Path to the code to be analyzed
-savepath = "input/test.sarif"  # Path where the analysis results will be saved
-
+savepath = "input/test.csv"  # Path where the analysis results will be saved
+n_threads = 1 #0: run maximum number of threads in local machine, n > 0: run on n threads
 # Run CodeQL analysis
-output = run_codeql(codepath, savepath)
-
-# Print the output in a readable JSON format
-print(json.dumps(output, indent=4))
+output = run_codeql(codepath, savepath, n_threads) ### Output is a pandas DF
 ```
 
 ### Arguments:
 - `codepath`: Path to the file or directory you want to analyze.
 - `savepath`: Path where the scan results will be saved (SARIF format).
+- `n_threads`: Number of threads for running CodeQL analysis. n = 0 will run this code on maximum number of threads in local machine; n > 0 will run this code on run on n threads
 
 ### Example Output:
-The output will be in JSON format and will include details about security vulnerabilities, potential bugs, and code quality issues.
+The output will be in CSV format and will all neccessary information including:
++ Name:	Name of the query that identified the result.
++ Description: Description of the query.
++ Severity:	Severity of the query.
++ Message:	Alert message.
++ Path:	Path of the file containing the alert.	/vendor/codemirror/markdown.js
++ Start line:	Line of the file where the code that triggered the alert begins.
++ Start column:	Column of the start line that marks the start of the alert code. Not included when equal to 1.
++ End line:	Line of the file where the code that triggered the alert ends. Not included when the same value as the start line.
++ End column:	Where available, the column of the end line that marks the end of the alert code. Otherwise the end line is repeated.

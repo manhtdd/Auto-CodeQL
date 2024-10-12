@@ -3,13 +3,15 @@ import os
 import subprocess
 from .read_output import codeql_analysis
 import time
+from typing import Optional
+
 
 CREATE_DATABASE_CMD = {
     "python": "cd {}; codeql database create codeql-database --language=python --source-root=. --overwrite; cd {}",
     "java": "cd {}; codeql database create codeql-database --command \"javac {}\" --language=java --source-root=. --overwrite; cd {}"
 }
 
-ANALYZE_CMD = "codeql database analyze {} --format=csv --output={} --sarif-category={}"
+ANALYZE_CMD = "codeql database analyze {} --format=csv --output={} --threads={}"
 
 # Setup logging to both file and console
 LOGS_DIR = "logs"
@@ -49,12 +51,12 @@ def command_with_timeout(cmd:str, cwd:str=".", timeout=60):
     out, err = p.communicate()
     return out, err
 
-def run_codeql(code_path: str, save_path: str) -> dict:
-    logging.info(code_path)
-    logging.info(save_path)
+def run_codeql(code_path: str, save_path: str, n_thread: Optional[int] = 1) -> dict:
+    logging.info(f"Run CodeQL analysis for '{code_path}' and save the result to '{save_path}'")
     tmp_path = save_path + ".tmp"
-    logging.info(tmp_path)
-    
+    logging.info("Temporary file path: " + tmp_path)
+    logging.info("Number of threads: " + str(n_thread))
+
     code_dir = os.path.dirname(code_path)
     logging.info(code_dir)
     codeql_database_dir = os.path.join(code_dir, "codeql-database")
@@ -66,7 +68,7 @@ def run_codeql(code_path: str, save_path: str) -> dict:
         logging.info("The file has a .py extension")
         create_database_cmd = CREATE_DATABASE_CMD["python"].format(code_dir, current_dir)
         logging.info(create_database_cmd)
-        analyze_cmd = ANALYZE_CMD.format(codeql_database_dir, tmp_path, "python")
+        analyze_cmd = ANALYZE_CMD.format(codeql_database_dir, tmp_path, n_thread)
         logging.info(analyze_cmd)
     elif code_path.endswith(".java"):
         raise NotImplementedError("Java is not supported yet")

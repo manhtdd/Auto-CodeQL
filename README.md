@@ -17,9 +17,9 @@ Before getting started, make sure you have Python 3.12+ and `pip` installed. You
 
 1. Download the CodeQL tar file from the [CodeQL GitHub releases page](https://github.com/github/codeql-action/releases) and extract it. For more information on which file to download, please kindly check [this website](https://docs.github.com/en/code-security/codeql-cli/getting-started-with-the-codeql-cli/setting-up-the-codeql-cli#1-download-the-codeql-cli-tar-archive).
 
-2. Add CodeQL to your system path by creating a symbolic link:
+2. Add CodeQL to your system path by adding codeql to PATH
    ```bash
-   ln -s <absolute-path-to-your-extracted-codeql>/codeql /usr/local/bin/codeql
+   export PATH=$PATH:<absolute-path-to-your-extracted-codeql>/codeql
    ```
 
 3. Verify the installation:

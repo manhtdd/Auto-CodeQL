@@ -1,17 +1,15 @@
-from typing import Optional
 import logging
 import os
-import json
 import subprocess
 from .read_output import codeql_analysis
 import time
 
 CREATE_DATABASE_CMD = {
-    "python": "codeql database create codeql-database --language=python --source-root={} --overwrite",
-    "java": "codeql database create codeql-database --command \"javac {}\" --language=java --source-root={} --overwrite"
+    "python": "cd {}; codeql database create codeql-database --language=python --source-root=. --overwrite; cd {}",
+    "java": "cd {}; codeql database create codeql-database --command \"javac {}\" --language=java --source-root=. --overwrite; cd {}"
 }
 
-ANALYZE_CMD = "codeql database analyze codeql-database --format=csv --output={} --sarif-category={}"
+ANALYZE_CMD = "codeql database analyze {} --format=csv --output={} --sarif-category={}"
 
 # Setup logging to both file and console
 LOGS_DIR = "logs"
@@ -51,29 +49,27 @@ def command_with_timeout(cmd:str, cwd:str=".", timeout=60):
     out, err = p.communicate()
     return out, err
 
-def run_codeql(codepath: str, savepath: str) -> dict:
-    logging.info(codepath)
-    logging.info(savepath)
-    tmppath = savepath + ".tmp"
-    logging.info(tmppath)
+def run_codeql(code_path: str, save_path: str) -> dict:
+    logging.info(code_path)
+    logging.info(save_path)
+    tmp_path = save_path + ".tmp"
+    logging.info(tmp_path)
     
-    dir_path = os.path.dirname(codepath)
-    logging.info(dir_path)
-    file_name = os.path.basename(codepath)
+    code_dir = os.path.dirname(code_path)
+    logging.info(code_dir)
+    codeql_database_dir = os.path.join(code_dir, "codeql-database")
+    current_dir = os.getcwd()
+    file_name = os.path.basename(code_path)
     logging.info(file_name)
         
-    if codepath.endswith(".py"):
+    if code_path.endswith(".py"):
         logging.info("The file has a .py extension")
-        create_database_cmd = CREATE_DATABASE_CMD["python"].format(dir_path)
+        create_database_cmd = CREATE_DATABASE_CMD["python"].format(code_dir, current_dir)
         logging.info(create_database_cmd)
-        analyze_cmd = ANALYZE_CMD.format(tmppath, "python")
+        analyze_cmd = ANALYZE_CMD.format(codeql_database_dir, tmp_path, "python")
         logging.info(analyze_cmd)
-    elif codepath.endswith(".java"):
-        logging.info("The file has a .java extension")
-        create_database_cmd = CREATE_DATABASE_CMD["java"].format(file_name, dir_path)
-        logging.info(create_database_cmd)
-        analyze_cmd = ANALYZE_CMD.format(tmppath, "java")
-        logging.info(analyze_cmd)
+    elif code_path.endswith(".java"):
+        raise NotImplementedError("Java is not supported yet")
     else:
         logging.error("The file has a different extension")
         return {}
@@ -81,16 +77,8 @@ def run_codeql(codepath: str, savepath: str) -> dict:
     command_with_timeout(create_database_cmd)
     command_with_timeout(analyze_cmd)
     
-    if not os.path.exists(tmppath):
-        logging.error(f"The file '{tmppath}' does not exist. CodeQL analysis failed !!!")
+    if not os.path.exists(tmp_path):
+        logging.error(f"The file '{tmp_path}' does not exist. CodeQL analysis failed !!!")
         return {}
     
-    return codeql_analysis(tmppath, savepath)
-
-if __name__ == "__main__":
-    codepath = "input/test.py"
-    savepath = "input/test.sarif"
-    # codepath = "input/Main.java"
-    # savepath = "input/main.json"
-    output = run_codeql(codepath, savepath)
-    logging.info(json.dumps(output, indent=4))
+    return codeql_analysis(tmp_path, save_path)

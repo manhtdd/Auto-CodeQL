@@ -15,7 +15,7 @@ Before getting started, make sure you have Python 3.12+ and `pip` installed. You
 
 ## Setup CodeQL
 
-1. Download the CodeQL tar file from the [CodeQL GitHub releases page](https://github.com/github/codeql-action/releases) and extract it. For more information on which file to download, please kindly check [this website](https://docs.github.com/en/code-security/codeql-cli/getting-started-with-the-codeql-cli/setting-up-the-codeql-cli#1-download-the-codeql-cli-tar-archive).
+1. Download the CodeQL tar file from the [CodeQL GitHub releases page](https://github.com/github/codeql-action/releases) and extract it. For more information on which file to download, please kindly check [this website](https://docs.github.com/en/code-security/codeql-cli/getting-started-with-the-codeql-cli/setting-up-the-codeql-cli#1-download-the-codeql-cli-tar-archive). 
 
 2. Add CodeQL to your system path by adding codeql to PATH
    ```bash
@@ -81,14 +81,20 @@ import json
 codepath = "input/test.py"  # Path to the code to be analyzed
 savepath = "input/test.csv"  # Path where the analysis results will be saved
 n_threads = 1 #0: run maximum number of threads in local machine, n > 0: run on n threads
+quality_suite = "s&q"
 # Run CodeQL analysis
-output = run_codeql(codepath, savepath, n_threads) ### Output is a pandas DF
+output = run_codeql("python", codepath, savepath, n_threads, quality_suite) ### Output is a pandas DF
 ```
 
 ### Arguments:
+- `language`: Target programming langayge.
 - `codepath`: Path to the file or directory you want to analyze.
-- `savepath`: Path where the scan results will be saved (SARIF format).
+- `savepath`: Path where the scan results will be saved (CSV format).
 - `n_threads`: Number of threads for running CodeQL analysis. n = 0 will run this code on maximum number of threads in local machine; n > 0 will run this code on run on n threads
+- `quality_suite`: Set of quality rules checked by CodeQL. Currently, our implementation supports three quality suites:
+  + `s&p`: Set of rules for checking both `code quality and security` issues. This is our default code quality suites
+  + `lgtm`: Set of rules for checking code quality issues from `LGTM.com`
+  + `security`: Set of rules for checking security issues
 
 ### Example Output:
 The output will be in CSV format and will all neccessary information including:

@@ -5,13 +5,20 @@ from .read_output import codeql_analysis
 import time
 from typing import Optional
 
+_QUALITY_SUITE_MAPPING = {
+    "python": {
+        "s&q": "codeql/python-queries@1.3.0:codeql-suites/python-security-and-quality.qls",
+        "lgtm":"codeql/python-queries@1.3.0:codeql-suites/python-lgtm-full.qls", 
+        "security": "codeql/python-queries@1.3.0:codeql-suites/python-security-extended.qls",
+    }
+}
 
 CREATE_DATABASE_CMD = {
     "python": "cd {}; codeql database create codeql-database --language=python --source-root=. --overwrite; cd {}",
     "java": "cd {}; codeql database create codeql-database --command \"javac {}\" --language=java --source-root=. --overwrite; cd {}"
 }
 
-ANALYZE_CMD = "codeql database analyze {} --format=csv --output={} --threads={}"
+ANALYZE_CMD = "codeql database analyze {} --format=csv --output={} --threads={} {}"
 
 # Setup logging to both file and console
 LOGS_DIR = "logs"
@@ -51,7 +58,11 @@ def command_with_timeout(cmd:str, cwd:str=".", timeout=60):
     out, err = p.communicate()
     return out, err
 
-def run_codeql(code_path: str, save_path: str, n_thread: Optional[int] = 1) -> dict:
+def run_codeql(language: str, code_path: str, save_path: str, n_thread: Optional[int] = 1, quality_suite: Optional[str] = "s&q") -> dict:
+    if language not in _QUALITY_SUITE_MAPPING:
+        raise ValueError(f"Language '{language}' is not supported. Supported languages are: {list(_QUALITY_SUITE_MAPPING.keys())}")
+    
+    quality_suite_id = _QUALITY_SUITE_MAPPING[language][quality_suite]
     logging.info(f"Run CodeQL analysis for '{code_path}' and save the result to '{save_path}'")
     tmp_path = save_path + ".tmp"
     logging.info("Temporary file path: " + tmp_path)
@@ -64,14 +75,12 @@ def run_codeql(code_path: str, save_path: str, n_thread: Optional[int] = 1) -> d
     file_name = os.path.basename(code_path)
     logging.info(file_name)
         
-    if code_path.endswith(".py"):
-        logging.info("The file has a .py extension")
+    if language == "python":
+        assert file_name.endswith(".py"), "The file is not a python file"
         create_database_cmd = CREATE_DATABASE_CMD["python"].format(code_dir, current_dir)
         logging.info(create_database_cmd)
-        analyze_cmd = ANALYZE_CMD.format(codeql_database_dir, tmp_path, n_thread)
+        analyze_cmd = ANALYZE_CMD.format(codeql_database_dir, tmp_path, n_thread, quality_suite_id)
         logging.info(analyze_cmd)
-    elif code_path.endswith(".java"):
-        raise NotImplementedError("Java is not supported yet")
     else:
         logging.error("The file has a different extension")
         return {}
